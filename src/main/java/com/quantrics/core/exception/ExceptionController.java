@@ -1,5 +1,6 @@
 package com.quantrics.core.exception;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -15,7 +16,7 @@ public class ExceptionController {
     @ExceptionHandler({ ApiError.class })
     public ResponseEntity<Object> handleApiException(ApiError e) {
 
-        return new ResponseEntity<>(new ApiErrorResponse(e.getStatus(),
-                e.getMessage(), TITLE_ERROR), e.getStatus());
+        return new ResponseEntity<>(new ApiErrorResponse(e.getMessage(), TITLE_ERROR),
+                HttpStatus.UNPROCESSABLE_ENTITY);
     }
 }

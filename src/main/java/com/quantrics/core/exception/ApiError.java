@@ -8,13 +8,10 @@ import org.springframework.http.HttpStatus;
 @Getter
 public class ApiError extends RuntimeException {
 
-    private HttpStatus status;
     private String message;
     private Throwable e;
 
-    public ApiError(HttpStatus status, String message) {
-        this.status = status;
+    public ApiError(String message) {
         this.message = message;
     }
-
 }

@@ -1,12 +1,14 @@
 package com.quantrics.core.location.service;
 
 import com.quantrics.core.exception.ApiError;
+import com.quantrics.core.exception.ISSCoordinateRemoteException;
+import com.quantrics.core.exception.ISSCoordinatesNullException;
+import com.quantrics.core.exception.WikipediaQueryRemoteException;
 import com.quantrics.core.location.gateway.ISSLocationGatewayImpl;
 import com.quantrics.core.location.gateway.WikipediaGatewayImpl;
 import com.quantrics.core.location.model.dto.ISSLocationResp;
 import com.quantrics.core.location.model.dto.NearbyPlaceWrapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Collections;
@@ -27,16 +29,24 @@ public class NearbyPlaceServiceImpl {
         ISSLocationResp issLocation = getIssCoordinates();
 
         if (issLocation == null) {
-            throw new ApiError(HttpStatus.BAD_REQUEST, FAILED_TO_GET_ISS_COORDS_GENERIC);
+            throw new ISSCoordinatesNullException(FAILED_TO_GET_ISS_COORDS_GENERIC);
         }
 
         Map<String, String> geoQueryParams = buildGeoQueryParams(issLocation);
 
-        return wikipediaGateway.getPlacesNearby(geoQueryParams);
+        try {
+            return wikipediaGateway.getPlacesNearby(geoQueryParams);
+        } catch (WikipediaQueryRemoteException e) {
+            throw new ApiError(e.getMessage(), e.getCause());
+        }
     }
 
     private ISSLocationResp getIssCoordinates() {
-        return issLocationGateway.getIssCoordinates();
+        try {
+            return issLocationGateway.getIssCoordinates();
+        } catch (ISSCoordinateRemoteException e) {
+            throw new ApiError(e.getMessage(), e);
+        }
     }
 
     private Map<String, String> buildGeoQueryParams(ISSLocationResp issLocation) {

@@ -1,6 +1,8 @@
 package com.quantrics.core.location.service;
 
 import com.quantrics.core.exception.ApiError;
+import com.quantrics.core.exception.ISSCoordinatesNullException;
+import com.quantrics.core.exception.WikipediaQueryRemoteException;
 import com.quantrics.core.location.gateway.ISSLocationGatewayImpl;
 import com.quantrics.core.location.gateway.WikipediaGatewayImpl;
 import com.quantrics.core.location.model.dto.ISSLocationResp;
@@ -10,14 +12,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
 import static com.quantrics.core.constants.QuantricsConstants.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
@@ -59,16 +59,37 @@ public class NearbyPlaceServiceImplTest {
     }
 
     @Test
-    public void testGetNearbyPlaces_FailedToGetIssCoords() {
-        // Mock ISSLocationGatewayImpl to return null
+    void testGetNearbyPlaces_IssCoordinatesNullException() {
         when(issLocationGateway.getIssCoordinates()).thenReturn(null);
 
-        // Call the method
-        ApiError error = assertThrows(ApiError.class, () -> nearbyPlaceService.getNearbyPlaces());
+        assertThrows(ISSCoordinatesNullException.class, () -> {
+            nearbyPlaceService.getNearbyPlaces();
+        });
 
-        // Verify
-        assertEquals(HttpStatus.BAD_REQUEST, error.getStatus());
+        verify(issLocationGateway, times(1)).getIssCoordinates();
+        verify(wikipediaGateway, never()).getPlacesNearby(anyMap());
+    }
+
+    @Test
+    public void testGetNearbyPlaces_FailedToGetIssCoords() {
+        when(issLocationGateway.getIssCoordinates()).thenReturn(null);
+
+        assertThrows(ApiError.class, () -> nearbyPlaceService.getNearbyPlaces());
+
         verify(issLocationGateway, times(1)).getIssCoordinates();
         verifyNoInteractions(wikipediaGateway);
+    }
+
+    @Test
+    void testGetNearbyPlaces_WikipediaQueryRemoteException() {
+        when(issLocationGateway.getIssCoordinates()).thenReturn(issLocationResp);
+        when(wikipediaGateway.getPlacesNearby(anyMap())).thenThrow(new WikipediaQueryRemoteException("Test exception"));
+
+        assertThrows(ApiError.class, () -> {
+            nearbyPlaceService.getNearbyPlaces();
+        });
+
+        verify(issLocationGateway, times(1)).getIssCoordinates();
+        verify(wikipediaGateway, times(1)).getPlacesNearby(anyMap());
     }
 }

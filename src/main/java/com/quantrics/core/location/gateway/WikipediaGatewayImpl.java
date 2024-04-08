@@ -1,6 +1,7 @@
 package com.quantrics.core.location.gateway;
 
 import com.quantrics.core.exception.ApiError;
+import com.quantrics.core.exception.WikipediaQueryRemoteException;
 import com.quantrics.core.location.mapper.NearbyPlaceMapper;
 import com.quantrics.core.location.model.dto.NearbyPlaceWrapper;
 import com.quantrics.core.location.model.dto.WikiPediaResp;
@@ -28,7 +29,7 @@ public class WikipediaGatewayImpl {
             WikiPediaResp response = execute(params);
             return nearbyPlaceMapper.map(response);
         } catch (Exception e) {
-            throw new ApiError(HttpStatus.BAD_REQUEST, FAILED_TO_GET_WIKI_NEARBY_PLACES_GENERIC, e);
+            throw new WikipediaQueryRemoteException(FAILED_TO_GET_WIKI_NEARBY_PLACES_GENERIC, e);
         }
     }
 
@@ -36,7 +37,7 @@ public class WikipediaGatewayImpl {
         Response<WikiPediaResp> response = wikipediaRemoteService.queryNearbyLocation(params).execute();
 
         if (!response.isSuccessful()) {
-            throw new ApiError(HttpStatus.UNPROCESSABLE_ENTITY, FAILED_TO_GET_WIKI_NEARBY_PLACES_API_ERROR + response.code());
+            throw new WikipediaQueryRemoteException(FAILED_TO_GET_WIKI_NEARBY_PLACES_API_ERROR + response.code());
         }
 
         return response.body();
